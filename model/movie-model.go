@@ -6,7 +6,15 @@ type MovieResponse []struct {
 }
 
 type MovieToRadarrResponse []struct {
-	TmdbId string `json:"tmdbId"`
+	Title  string `json:"title"`
+	TmdbId int    `json:"tmdbId"`
+	Year   string `json:"year"`
+}
+
+type AddMovieToRadarrModel struct {
+	Title  string `json:"title"`
+	TmdbId int    `json:"tmdbId"`
+	Year   string `json:"year"`
 }
 
 type MovieLoginResponse struct {
