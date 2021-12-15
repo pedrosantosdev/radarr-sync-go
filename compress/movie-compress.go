@@ -9,10 +9,12 @@ import (
 	"strings"
 )
 
+const Extension = "tar"
+
 func Tar(source, target string) error {
 	filename := filepath.Base(source)
 	fmt.Println("Compressing: ", filename)
-	target = filepath.Join(target, fmt.Sprintf("%s.tar", filename))
+	target = filepath.Join(target, fmt.Sprintf("%s.%s", filename, Extension))
 	tarfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -72,7 +74,7 @@ func Compress(listNames []string, source, target string) {
 }
 
 func Missing(filename, target string) bool {
-	if _, err := os.Stat(fmt.Sprintf("%s/%s.tar", target, filename)); err != nil {
+	if _, err := os.Stat(fmt.Sprintf("%s/%s.%s", target, filename, Extension)); err != nil {
 		if os.IsNotExist(err) {
 			return true
 		}
