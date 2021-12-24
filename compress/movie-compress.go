@@ -26,7 +26,7 @@ func Tar(source, target string) error {
 
 	info, err := os.Stat(source)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	var baseDir string
@@ -69,17 +69,49 @@ func Tar(source, target string) error {
 func Compress(listNames []string, source, target string) {
 	for _, name := range listNames {
 		s := filepath.Join(source, name)
-		Tar(s, target)
+		err := Tar(s, target)
+		if err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
 	}
 }
 
-func Missing(filename, target string) bool {
-	if _, err := os.Stat(fmt.Sprintf("%s/%s.%s", target, filename, Extension)); err != nil {
+func Missing(filename, target string, isDirectory bool) bool {
+	var search string
+	if isDirectory {
+		search = fmt.Sprintf("%s/%s", target, filename)
+	} else {
+		search = fmt.Sprintf("%s/%s.%s", target, filename, Extension)
+	}
+	if _, err := os.Stat(search); err != nil {
 		if os.IsNotExist(err) {
 			return true
 		}
 	}
 	return false
+}
+
+func WalkMatch(root, pattern string) ([]string, error) {
+	var matches []string
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if matched, err := filepath.Match(pattern, filepath.Base(path)); err != nil {
+			return err
+		} else if matched {
+			matches = append(matches, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return matches, nil
 }
 
 func Handler(source, target string, list []string) error {
@@ -90,8 +122,23 @@ func Handler(source, target string, list []string) error {
 	var diff []string
 	for _, name := range list {
 		filename := filepath.Base(name)
-		if Missing(filename, target) {
+		if Missing(filename, target, false) {
 			diff = append(diff, name)
+		}
+	}
+	fmt.Println("Verify Diff Target to Source")
+	compressedFiles, err := WalkMatch(target, fmt.Sprintf("*.%s", Extension))
+	if err != nil {
+		return err
+	}
+	for _, compressed := range compressedFiles {
+		filename := strings.Replace(filepath.Base(compressed), fmt.Sprintf(".%s", Extension), "", -1)
+		folder := fmt.Sprintf("movies/%s", filename)
+		if Missing(folder, source, true) {
+			err := os.Remove(compressed)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	fmt.Println("Verify Diff Source to Target")
