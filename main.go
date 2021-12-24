@@ -29,18 +29,24 @@ func main() {
 		log.Fatalln(err)
 		os.Exit(1)
 	}
-	syncWithRadarr(*url, token.Token, *radarrUrl, *radarrKey)
-	compressNSyncRemote(*url, token.Token, *source, *target)
+	e := syncWithRadarr(*url, token.Token, *radarrUrl, *radarrKey)
+	if e != nil {
+		log.Fatalln(e)
+		os.Exit(1)
+	}
+	er := compressNSyncRemote(*url, token.Token, *source, *target)
+	if er != nil {
+		log.Fatalln(er)
+		os.Exit(1)
+	}
 	fmt.Println("Finish app")
-	log.Default()
 	os.Exit(0)
 }
 
-func syncWithRadarr(url, token, radarrUrl, radarrKey string) {
+func syncWithRadarr(url, token, radarrUrl, radarrKey string) error {
 	movies, err := client.FetchMoviesListToSync(url, token)
 	if err != nil {
-		log.Fatalln(err)
-		os.Exit(1)
+		return err
 	}
 	for _, movie := range movies {
 		if movie.HasFile {
@@ -52,9 +58,10 @@ func syncWithRadarr(url, token, radarrUrl, radarrKey string) {
 			continue
 		}
 	}
+	return nil
 }
 
-func compressNSyncRemote(url, token, source, target string) {
+func compressNSyncRemote(url, token, source, target string) error {
 	movies, err := client.FetchMoviesListToCompress(url, token)
 	if err != nil {
 		log.Fatalln(err)
@@ -66,7 +73,7 @@ func compressNSyncRemote(url, token, source, target string) {
 	}
 	e := compress.Handler(source, target, listMovies)
 	if e != nil {
-		log.Fatalln(e)
-		os.Exit(1)
+		return e
 	}
+	return nil
 }
