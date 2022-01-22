@@ -21,10 +21,11 @@ func AddMovieOnRadarr(baseUrl, token string, data model.AddMovieToRadarrModel) e
 
 	// "qualityProfileId":6 HD - 720p/1080p
 	values := map[string]interface{}{
-		"tmdbid":           data.TmdbId,
-		"path":             FolderPath,
-		"monitored":        true,
-		"qualityProfileId": 6,
+		"tmdbid":              data.TmdbId,
+		"path":                FolderPath,
+		"monitored":           true,
+		"qualityProfileId":    6,
+		"minimumAvailability": 2,
 	}
 	jsonData, err := json.Marshal(values)
 	if err != nil {
