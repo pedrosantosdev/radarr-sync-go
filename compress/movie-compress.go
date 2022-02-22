@@ -7,11 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/pedrosantosdev/radarr-sync-go/utils"
 )
 
 const Extension = "tar"
 
-func Tar(source, target string) error {
+func compress(source, target string) error {
 	filename := filepath.Base(source)
 	fmt.Println("Compressing: ", filename)
 	target = filepath.Join(target, fmt.Sprintf("%s.%s", filename, Extension))
@@ -66,10 +68,10 @@ func Tar(source, target string) error {
 		})
 }
 
-func Compress(listNames []string, source, target string) {
+func compressList(listNames []string, source, target string) {
 	for _, name := range listNames {
 		s := filepath.Join(source, name)
-		err := Tar(s, target)
+		err := compress(s, target)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
@@ -77,7 +79,7 @@ func Compress(listNames []string, source, target string) {
 	}
 }
 
-func Missing(filename, target string, isDirectory bool) bool {
+func missing(filename, target string, isDirectory bool) bool {
 	var search string
 	if isDirectory {
 		search = fmt.Sprintf("%s/%s", target, filename)
@@ -92,7 +94,7 @@ func Missing(filename, target string, isDirectory bool) bool {
 	return false
 }
 
-func WalkMatch(root, pattern string) ([]string, error) {
+func walkMatch(root, pattern string) ([]string, error) {
 	var matches []string
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -116,25 +118,24 @@ func WalkMatch(root, pattern string) ([]string, error) {
 
 func Handler(source, target string, list []string) error {
 	if source == "" || target == "" {
-		return fmt.Errorf("Missing arguments: source and target required")
+		return fmt.Errorf("missing arguments: source and target required")
 	}
 	fmt.Println("Init Mapping Folder")
 	var diff []string
 	for _, name := range list {
 		filename := filepath.Base(name)
-		if Missing(filename, target, false) {
+		if missing(filename, target, false) {
 			diff = append(diff, name)
 		}
 	}
 	fmt.Println("Verify Diff Target to Source")
-	compressedFiles, err := WalkMatch(target, fmt.Sprintf("*.%s", Extension))
+	compressedFiles, err := walkMatch(target, fmt.Sprintf("*.%s", Extension))
 	if err != nil {
 		return err
 	}
 	for _, compressed := range compressedFiles {
 		filename := strings.Replace(filepath.Base(compressed), fmt.Sprintf(".%s", Extension), "", -1)
-		folder := fmt.Sprintf("movies/%s", filename)
-		if Missing(folder, source, true) {
+		if utils.IndexOf(filename, list) < 0 {
 			err := os.Remove(compressed)
 			if err != nil {
 				return err
@@ -142,6 +143,6 @@ func Handler(source, target string, list []string) error {
 		}
 	}
 	fmt.Println("Verify Diff Source to Target")
-	Compress(diff, source, target)
+	compressList(diff, source, target)
 	return nil
 }
