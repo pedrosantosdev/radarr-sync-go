@@ -1,2 +1,3 @@
 *.exe
 radarr-sync-go
+test.sh

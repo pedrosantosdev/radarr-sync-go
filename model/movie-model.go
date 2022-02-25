@@ -28,12 +28,12 @@ type AddMovieToRadarrModel struct {
 }
 
 type GetMovieRadarrModel struct {
-	Title     string `json:"title"`
-	Overview  string `json:"overview"`
-	TmdbId    int    `json:"tmdbId"`
-	Path      string `json:"path"`
-	HasFile   bool   `json:"hasFile"`
-	InCinemas string `json:"inCinemas"`
+	Title string `json:"title"`
+	// Overview  string `json:"overview"`
+	TmdbId int `json:"tmdbId"`
+	// Path   string `json:"path"`
+	HasFile bool `json:"hasFile"`
+	// InCinemas string `json:"inCinemas"`
 }
 
 type MovieLoginResponse struct {

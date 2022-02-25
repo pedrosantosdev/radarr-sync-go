@@ -50,7 +50,7 @@ func syncWithRadarr(url, token, radarrUrl, radarrKey string) error {
 	if err != nil {
 		return err
 	}
-	moviesOnRadarr, err := client.GetAllMoviesOnRadarr(url, token)
+	moviesOnRadarr, err := client.GetAllMoviesOnRadarr(radarrUrl, radarrKey)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func syncWithRadarr(url, token, radarrUrl, radarrKey string) error {
 			continue
 		}
 		// Add To Server
-		err := client.AddMovieToServer(radarrUrl, radarrKey, movie)
+		err := client.AddMovieToServer(url, token, movie)
 		if err != nil {
 			fmt.Println(err)
 			continue
