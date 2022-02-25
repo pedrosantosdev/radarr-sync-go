@@ -5,7 +5,7 @@ type MovieResponse []struct {
 	Path  string `json:"path"`
 }
 
-type MovieToRadarrResponse []struct {
+type MovieToRadarrResponse struct {
 	Title   string `json:"title"`
 	TmdbId  int    `json:"tmdbId"`
 	Year    string `json:"year"`
@@ -25,6 +25,15 @@ type AddMovieToRadarrModel struct {
 	TmdbId  int    `json:"tmdbId"`
 	Year    string `json:"year"`
 	HasFile bool   `json:"hasFile"`
+}
+
+type GetMovieRadarrModel struct {
+	Title     string `json:"title"`
+	Overview  string `json:"overview"`
+	TmdbId    int    `json:"tmdbId"`
+	Path      string `json:"path"`
+	HasFile   bool   `json:"hasFile"`
+	InCinemas string `json:"inCinemas"`
 }
 
 type MovieLoginResponse struct {

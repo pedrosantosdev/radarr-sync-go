@@ -14,7 +14,7 @@ import (
 )
 
 // curl -H "Content-Type: application/json" -X POST -d '{"title":"Proof","qualityProfileId":"4", "tmdbid":"14904","titleslug":"proof-14904", "monitored":"true", "rootFolderPath":"/Volume1/Movies/", "images":[{"covertype":"poster","url":"https://image.tmdb.org/t/p/w640/ghPbOsvg8WrJQBSThtNakBGuDi4.jpg"}]}' http://192.168.1.10:8310/api/movie?apikey=YOUAPIKEYHERE
-func AddMovieOnRadarr(baseUrl, token string, data model.AddMovieToRadarrModel) error {
+func AddMovieOnRadarr(baseUrl, token string, data model.MovieToRadarrResponse) error {
 	URL := fmt.Sprintf("%s/api/v3/movie?apikey=%s", baseUrl, token)
 	onlyWords := regexp.MustCompile(`\W+`)
 	FolderPath := fmt.Sprintf("/movies/%s (%s)", onlyWords.ReplaceAllString(data.Title, " "), data.Year)
@@ -79,4 +79,52 @@ func AddMovieOnRadarr(baseUrl, token string, data model.AddMovieToRadarrModel) e
 		return err
 	}
 	return nil
+}
+func GetAllMoviesOnRadarr(baseUrl, token string) ([]model.GetMovieRadarrModel, error) {
+	URL := fmt.Sprintf("%s/api/v3/movie?apikey=%s", baseUrl, token)
+
+	resp, err := Client.Get(URL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var cResp []model.GetMovieRadarrModel
+
+	//Decode the data
+	if err := json.NewDecoder(resp.Body).Decode(&cResp); err != nil {
+		if err != nil {
+			var syntaxError *json.SyntaxError
+			var unmarshalTypeError *json.UnmarshalTypeError
+
+			switch {
+			case errors.As(err, &syntaxError):
+				msg := fmt.Sprintf("Request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
+				return nil, fmt.Errorf(msg)
+
+			case errors.Is(err, io.ErrUnexpectedEOF):
+				msg := "Request body contains badly-formed JSON"
+				return nil, fmt.Errorf(msg)
+
+			case errors.As(err, &unmarshalTypeError):
+				msg := fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
+				return nil, fmt.Errorf(msg)
+
+			case strings.HasPrefix(err.Error(), "json: unknown field "):
+				fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+				msg := fmt.Sprintf("Request body contains unknown field %s", fieldName)
+				return nil, fmt.Errorf(msg)
+
+			case errors.Is(err, io.EOF):
+				msg := "Request body must not be empty"
+				return nil, fmt.Errorf(msg)
+
+			}
+		}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, err
+	}
+	return cResp, nil
 }

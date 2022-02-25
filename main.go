@@ -8,6 +8,8 @@ import (
 
 	"github.com/pedrosantosdev/radarr-sync-go/client"
 	"github.com/pedrosantosdev/radarr-sync-go/compress"
+	"github.com/pedrosantosdev/radarr-sync-go/model"
+	"github.com/thoas/go-funk"
 )
 
 func main() {
@@ -44,15 +46,36 @@ func main() {
 }
 
 func syncWithRadarr(url, token, radarrUrl, radarrKey string) error {
-	movies, err := client.FetchMoviesListToSync(url, token)
+	moviesOnServer, err := client.FetchMoviesListToSync(url, token)
 	if err != nil {
 		return err
 	}
-	for _, movie := range movies {
-		if movie.HasFile {
+	moviesOnRadarr, err := client.GetAllMoviesOnRadarr(url, token)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Server to Radarr")
+	for _, movie := range moviesOnServer {
+		if movie.HasFile || (funk.IndexOf(moviesOnRadarr, func(value model.GetMovieRadarrModel) bool {
+			return value.TmdbId == movie.TmdbId
+		}) > -1) {
 			continue
 		}
 		err := client.AddMovieOnRadarr(radarrUrl, radarrKey, movie)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+	}
+	fmt.Println("Radarr to Server")
+	for _, movie := range moviesOnRadarr {
+		if !movie.HasFile || (funk.IndexOf(moviesOnServer, func(value model.GetMovieRadarrModel) bool {
+			return value.TmdbId == movie.TmdbId
+		}) > -1) {
+			continue
+		}
+		// Add To Server
+		err := client.AddMovieToServer(radarrUrl, radarrKey, movie)
 		if err != nil {
 			fmt.Println(err)
 			continue
