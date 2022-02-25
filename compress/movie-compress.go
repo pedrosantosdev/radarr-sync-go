@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pedrosantosdev/radarr-sync-go/utils"
+	"github.com/thoas/go-funk"
 )
 
 const Extension = "tar"
@@ -135,7 +135,7 @@ func Handler(source, target string, list []string) error {
 	}
 	for _, compressed := range compressedFiles {
 		filename := strings.Replace(filepath.Base(compressed), fmt.Sprintf(".%s", Extension), "", -1)
-		if utils.IndexOf(filename, list) < 0 {
+		if funk.IndexOf(filename, list) < 0 {
 			err := os.Remove(compressed)
 			if err != nil {
 				return err
