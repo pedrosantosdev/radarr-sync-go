@@ -26,17 +26,19 @@ func main() {
 		log.Fatalln("Missing arguments: url, soruce, target, radarrUrl, radarrKey required")
 		os.Exit(1)
 	}
-	token, err := client.Login(*url, *login, *password)
+	client.SetServerUri(*url)
+	client.SetRadarrUri(*radarrUrl, *radarrKey)
+	token, err := client.Login(*login, *password)
 	if err != nil {
 		log.Fatalln(err)
 		os.Exit(1)
 	}
-	e := syncWithRadarr(*url, token.Token, *radarrUrl, *radarrKey)
+	e := syncWithRadarr(token.Token)
 	if e != nil {
 		log.Fatalln(e)
 		os.Exit(1)
 	}
-	er := compressNSyncRemote(*url, token.Token, *source, *target)
+	er := compressNSyncRemote(token.Token, *source, *target)
 	if er != nil {
 		log.Fatalln(er)
 		os.Exit(1)
@@ -45,23 +47,23 @@ func main() {
 	os.Exit(0)
 }
 
-func syncWithRadarr(url, token, radarrUrl, radarrKey string) error {
-	moviesOnServer, err := client.FetchMoviesListToSync(url, token)
+func syncWithRadarr(token string) error {
+	moviesOnServer, err := client.FetchMoviesListToSync(token)
 	if err != nil {
 		return err
 	}
-	moviesOnRadarr, err := client.GetAllMoviesOnRadarr(radarrUrl, radarrKey)
+	moviesOnRadarr, err := client.GetAllMoviesOnRadarr()
 	if err != nil {
 		return err
 	}
 	fmt.Println("Server to Radarr")
 	for _, movie := range moviesOnServer {
-		if movie.HasFile || (funk.IndexOf(moviesOnRadarr, func(value model.GetMovieRadarrModel) bool {
+		if movie.HasFile || (funk.IndexOf(moviesOnRadarr, func(value model.RadarrModel) bool {
 			return value.TmdbId == movie.TmdbId
 		}) > -1) {
 			continue
 		}
-		err := client.AddMovieOnRadarr(radarrUrl, radarrKey, movie)
+		err := client.AddMovieOnRadarr(movie)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -69,13 +71,13 @@ func syncWithRadarr(url, token, radarrUrl, radarrKey string) error {
 	}
 	fmt.Println("Radarr to Server")
 	for _, movie := range moviesOnRadarr {
-		if !movie.HasFile || (funk.IndexOf(moviesOnServer, func(value model.GetMovieRadarrModel) bool {
+		if !movie.HasFile || (funk.IndexOf(moviesOnServer, func(value model.MovieToRadarrResponse) bool {
 			return value.TmdbId == movie.TmdbId
 		}) > -1) {
 			continue
 		}
 		// Add To Server
-		err := client.AddMovieToServer(url, token, movie)
+		err := client.AddMovieToServer(token, movie)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -84,8 +86,8 @@ func syncWithRadarr(url, token, radarrUrl, radarrKey string) error {
 	return nil
 }
 
-func compressNSyncRemote(url, token, source, target string) error {
-	movies, err := client.FetchMoviesListToCompress(url, token)
+func compressNSyncRemote(token, source, target string) error {
+	movies, err := client.FetchMoviesListToCompress(token)
 	if err != nil {
 		log.Fatalln(err)
 		os.Exit(1)
