@@ -20,20 +20,22 @@ type RadarrResponseError []struct {
 	ErrorCode      string      `json:"errorCode"`
 }
 
-type AddMovieToRadarrModel struct {
-	Title   string `json:"title"`
-	TmdbId  int    `json:"tmdbId"`
-	Year    string `json:"year"`
-	HasFile bool   `json:"hasFile"`
+type AddMovieToRadarrModel MovieToRadarrResponse
+
+type GetMovieRadarrModel []RadarrModel
+
+type RadarrModel struct {
+	Title     string       `json:"title"`
+	Overview  string       `json:"overview"`
+	TmdbId    int          `json:"tmdbId"`
+	Path      string       `json:"path"`
+	HasFile   bool         `json:"hasFile"`
+	InCinemas string       `json:"inCinemas"`
+	Images    []ImageModel `json:"images"`
 }
 
-type GetMovieRadarrModel struct {
-	Title string `json:"title"`
-	// Overview  string `json:"overview"`
-	TmdbId int `json:"tmdbId"`
-	// Path   string `json:"path"`
-	HasFile bool `json:"hasFile"`
-	// InCinemas string `json:"inCinemas"`
+type ImageModel struct {
+	RemoteUrl string `json:"remoteUrl"`
 }
 
 type MovieLoginResponse struct {
