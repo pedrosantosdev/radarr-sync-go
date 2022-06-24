@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/pedrosantosdev/radarr-sync-go/client"
-	"github.com/pedrosantosdev/radarr-sync-go/compress"
-	"github.com/pedrosantosdev/radarr-sync-go/model"
+	"github.com/pedrosantosdev/radarr-sync-go/src/client"
+	"github.com/pedrosantosdev/radarr-sync-go/src/compress"
+	"github.com/pedrosantosdev/radarr-sync-go/src/model"
 	"github.com/thoas/go-funk"
 )
 

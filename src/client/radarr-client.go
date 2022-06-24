@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/pedrosantosdev/radarr-sync-go/model"
+	"github.com/pedrosantosdev/radarr-sync-go/src/model"
 )
 
 var radarrURI string

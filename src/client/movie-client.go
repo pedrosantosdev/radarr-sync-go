@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/pedrosantosdev/radarr-sync-go/model"
+	"github.com/pedrosantosdev/radarr-sync-go/src/model"
 )
 
 var serverURI string
