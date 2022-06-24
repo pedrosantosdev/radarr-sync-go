@@ -134,9 +134,9 @@ func Handler(source, target string, list []string) error {
 		return err
 	}
 	for _, compressed := range compressedFiles {
-		filename := strings.Replace(filepath.Base(compressed), fmt.Sprintf(".%s", Extension), "", -1)
-		if funk.IndexOf(filename, list) < 0 {
-			fmt.Println(filename)
+		filename := fmt.Sprintf("/movies/%s", strings.Replace(filepath.Base(compressed), fmt.Sprintf(".%s", Extension), "", -1))
+		fmt.Printf("%s %d \n", filename, funk.IndexOfString(list, filename))
+		if funk.IndexOfString(list, filename) < 0 {
 			err := os.Remove(compressed)
 			if err != nil {
 				return err
