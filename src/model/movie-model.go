@@ -39,5 +39,5 @@ type ImageModel struct {
 }
 
 type MovieLoginResponse struct {
-	Token string `json:"token"`
+	Token string `json:"accessToken"`
 }
