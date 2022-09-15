@@ -21,8 +21,9 @@ func main() {
 	target := flag.String("target", "", "")
 	radarrUrl := flag.String("radarr-url", "", "")
 	radarrKey := flag.String("radarr-key", "", "")
+	skipCompress := flag.String("skip-compress", "", "")
 	flag.Parse()
-	if *url == "" || *source == "" || *target == "" || *login == "" || *password == "" || *radarrUrl == "" || *radarrKey == "" {
+	if *url == "" || (*skipCompress == "" && (*source == "" || *target == "")) || *login == "" || *password == "" || *radarrUrl == "" || *radarrKey == "" {
 		log.Fatalln("Missing arguments: url, soruce, target, radarrUrl, radarrKey required")
 		os.Exit(1)
 	}
@@ -38,10 +39,12 @@ func main() {
 		log.Fatalln(e)
 		os.Exit(1)
 	}
-	er := compressNSyncRemote(token.Token, *source, *target)
-	if er != nil {
-		log.Fatalln(er)
-		os.Exit(1)
+	if *skipCompress == "" {
+		er := compressNSyncRemote(token.Token, *source, *target)
+		if er != nil {
+			log.Fatalln(er)
+			os.Exit(1)
+		}
 	}
 	fmt.Println("Finish app")
 	os.Exit(0)
