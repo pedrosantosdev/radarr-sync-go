@@ -14,16 +14,17 @@ import (
 
 func main() {
 	fmt.Println("Init app")
-	url := flag.String("url", "", "")
-	login := flag.String("login", "", "")
-	password := flag.String("password", "", "")
-	source := flag.String("source", "", "")
-	target := flag.String("target", "", "")
-	radarrUrl := flag.String("radarr-url", "", "")
-	radarrKey := flag.String("radarr-key", "", "")
-	skipCompress := flag.String("skip-compress", "", "")
+	url := flag.String("url", "", "Server Url")
+	login := flag.String("login", "", "Server Username")
+	password := flag.String("password", "", "Server Password")
+	source := flag.String("source", "", "Folder With files to compress")
+	target := flag.String("target", "", "Target Path for compressed files")
+	radarrUrl := flag.String("radarr-url", "", "Url from Radarr")
+	radarrKey := flag.String("radarr-key", "", "API key from Radarr")
+	skipCompress := flag.Bool("skip-compress", false, "Skips the compressing stage")
+	debug := flag.Bool("debug", false, "Enable Debug Mod")
 	flag.Parse()
-	if *url == "" || (*skipCompress == "" && (*source == "" || *target == "")) || *login == "" || *password == "" || *radarrUrl == "" || *radarrKey == "" {
+	if *url == "" || (!*skipCompress && (*source == "" || *target == "")) || *login == "" || *password == "" || *radarrUrl == "" || *radarrKey == "" {
 		log.Fatalln("Missing arguments: url, soruce, target, radarrUrl, radarrKey required")
 		os.Exit(1)
 	}
@@ -34,12 +35,12 @@ func main() {
 		log.Fatalln(err)
 		os.Exit(1)
 	}
-	e := syncWithRadarr(token.Token)
+	e := syncWithRadarr(token.Token, *debug)
 	if e != nil {
 		log.Fatalln(e)
 		os.Exit(1)
 	}
-	if *skipCompress == "" {
+	if !*skipCompress {
 		er := compressNSyncRemote(token.Token, *source, *target)
 		if er != nil {
 			log.Fatalln(er)
@@ -50,7 +51,7 @@ func main() {
 	os.Exit(0)
 }
 
-func syncWithRadarr(token string) error {
+func syncWithRadarr(token string, debug bool) error {
 	moviesOnServer, err := client.FetchMoviesListToSync(token)
 	if err != nil {
 		return err
@@ -61,6 +62,9 @@ func syncWithRadarr(token string) error {
 	}
 	fmt.Println("Server to Radarr")
 	for _, movie := range moviesOnServer {
+		if debug {
+			fmt.Println(movie.Title)
+		}
 		if movie.HasFile || (funk.IndexOf(moviesOnRadarr, func(value model.RadarrModel) bool {
 			return value.TmdbId == movie.TmdbId
 		}) > -1) {
@@ -74,6 +78,9 @@ func syncWithRadarr(token string) error {
 	}
 	fmt.Println("Radarr to Server")
 	for _, movie := range moviesOnRadarr {
+		if debug {
+			fmt.Println(movie.Title)
+		}
 		if !movie.HasFile || (funk.IndexOf(moviesOnServer, func(value model.MovieToRadarrResponse) bool {
 			return value.TmdbId == movie.TmdbId
 		}) > -1) {
