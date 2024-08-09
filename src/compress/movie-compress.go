@@ -2,6 +2,7 @@ package compress
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
@@ -11,7 +12,7 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-const Extension = "tar"
+const Extension = "tar.gz"
 
 func compress(source, target string) error {
 	filename := filepath.Base(source)
@@ -22,8 +23,9 @@ func compress(source, target string) error {
 		return err
 	}
 	defer tarfile.Close()
-
-	tarball := tar.NewWriter(tarfile)
+	gz := gzip.NewWriter(tarfile)
+	defer gz.Close()
+	tarball := tar.NewWriter(gz)
 	defer tarball.Close()
 
 	info, err := os.Stat(source)
@@ -79,19 +81,27 @@ func compressList(listNames []string, source, target string) {
 	}
 }
 
-func missing(filename, target string, isDirectory bool) bool {
+func missing(filename, source, target string, isDirectory bool) bool {
 	var search string
 	if isDirectory {
 		search = fmt.Sprintf("%s/%s", target, filename)
 	} else {
 		search = fmt.Sprintf("%s/%s.%s", target, filename, Extension)
 	}
-	if _, err := os.Stat(search); err != nil {
+	fileInfo, err := os.Stat(search)
+	if err != nil {
 		if os.IsNotExist(err) {
 			return true
 		}
 	}
-	return false
+	folderInfo, err := os.Stat(fmt.Sprintf("%s/%s", source, filename))
+	if err != nil {
+		return false
+	}
+	if fileInfo.ModTime().After(folderInfo.ModTime()) {
+		return false
+	}
+	return true
 }
 
 func walkMatch(root, pattern string) ([]string, error) {
@@ -124,7 +134,7 @@ func Handler(source, target string, list []string) error {
 	var diff []string
 	for _, name := range list {
 		filename := filepath.Base(name)
-		if missing(filename, target, false) {
+		if missing(filename, source, target, false) {
 			diff = append(diff, name)
 		}
 	}
