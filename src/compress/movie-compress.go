@@ -23,7 +23,10 @@ func compress(source, target string) error {
 		return err
 	}
 	defer tarfile.Close()
-	gz := gzip.NewWriter(tarfile)
+	gz, err := gzip.NewWriterLevel(tarfile, 6)
+	if err != nil {
+		return err
+	}
 	defer gz.Close()
 	tarball := tar.NewWriter(gz)
 	defer tarball.Close()
