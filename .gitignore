@@ -2,3 +2,5 @@
 radarr-sync-go
 test.sh
 vendor
+
+dist/
