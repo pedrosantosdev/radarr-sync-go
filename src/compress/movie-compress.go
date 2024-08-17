@@ -14,20 +14,6 @@ func Handler(source, target string, list []string) error {
 	if source == "" || target == "" {
 		return fmt.Errorf("missing arguments: source and target required")
 	}
-	fmt.Println("Init Mapping Folder")
-	var diff []string
-	for _, name := range list {
-		filename := filepath.Base(name)
-		targetFile := io_archive.FileStat(filename, io_archive.Extension, target)
-		if targetFile == nil {
-			diff = append(diff, name)
-			continue
-		}
-		sourceFolder := io_archive.FileStat(filename, "", target)
-		if sourceFolder.ModTime().After(targetFile.ModTime()) {
-			diff = append(diff, name)
-		}
-	}
 	fmt.Println("Verify Diff Target to Source")
 	compressedFiles, err := io_archive.FindWildcard(target, fmt.Sprintf("*.%s", io_archive.Extension))
 	if err != nil {
@@ -41,6 +27,23 @@ func Handler(source, target string, list []string) error {
 			if err != nil {
 				return err
 			}
+		}
+	}
+	fmt.Println("Init Mapping Folder")
+	var diff []string
+	for _, name := range list {
+		filename := filepath.Base(name)
+		targetFile := io_archive.FileStat(filename, io_archive.Extension, target)
+		if targetFile == nil {
+			diff = append(diff, name)
+			continue
+		}
+		sourceFolder := io_archive.FileStat(filename, "", target)
+		if sourceFolder == nil {
+			continue
+		}
+		if sourceFolder.ModTime().After(targetFile.ModTime()) {
+			diff = append(diff, name)
 		}
 	}
 	fmt.Println("Verify Diff Source to Target")
