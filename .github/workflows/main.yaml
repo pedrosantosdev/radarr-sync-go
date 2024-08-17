@@ -20,10 +20,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 'stable'
+      - name: Install dependencies
+        run: go get .
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: "latest"
-          args: release --clean
+          args: release --clean --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
