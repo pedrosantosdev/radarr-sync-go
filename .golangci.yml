@@ -1,5 +1,5 @@
 output:
-  formats: [colored-line-number]
+  format: colored-line-number
 
 run:
   timeout: 5m
