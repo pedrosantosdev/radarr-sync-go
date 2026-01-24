@@ -46,7 +46,7 @@ func FetchMoviesListToSync(token string) ([]model.MovieToRadarrResponse, error) 
 	return cResp, nil
 }
 
-func AddMovieToServer(token string, data model.RadarrModel) error {
+func AddMovieToServer(token string, data *model.RadarrModel) error {
 	URL := fmt.Sprintf("%s/movies", serverURI)
 
 	headers := map[string]string{
@@ -55,7 +55,7 @@ func AddMovieToServer(token string, data model.RadarrModel) error {
 
 	inCinemas := "TBA"
 
-	if data.InCinemas != "" {
+	if data != nil && data.InCinemas != "" {
 		inCinemas = data.InCinemas[0:10]
 	}
 

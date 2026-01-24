@@ -53,7 +53,7 @@ func TestSyncAndCompressTargetNotFound(t *testing.T) {
 	sourceDir := t.TempDir()
 
 	testFile := filepath.Join(sourceDir, "test.txt")
-	err := os.WriteFile(testFile, []byte("test content"), 0644)
+	err := os.WriteFile(testFile, []byte("test content"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}

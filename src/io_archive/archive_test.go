@@ -12,7 +12,7 @@ func TestFindWildcardValidPattern(t *testing.T) {
 	files := []string{"file1.tar.gz", "file2.tar.gz", "file3.txt", "file4.tar.gz"}
 	for _, file := range files {
 		filePath := filepath.Join(tmpDir, file)
-		err := os.WriteFile(filePath, []byte("test"), 0644)
+		err := os.WriteFile(filePath, []byte("test"), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}
@@ -30,7 +30,7 @@ func TestFindWildcardValidPattern(t *testing.T) {
 
 func TestFindWildcardNoMatches(t *testing.T) {
 	tmpDir := t.TempDir()
-	err := os.WriteFile(filepath.Join(tmpDir, "file.txt"), []byte("test"), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "file.txt"), []byte("test"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestFindWildcardInvalidRoot(t *testing.T) {
 func TestFindWildcardIgnoresDirectories(t *testing.T) {
 	tmpDir := t.TempDir()
 	subDir := filepath.Join(tmpDir, "subdir")
-	err := os.Mkdir(subDir, 0755)
+	err := os.Mkdir(subDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create subdirectory: %v", err)
 	}
@@ -252,7 +252,7 @@ func TestCompressDirectory(t *testing.T) {
 	sourceDir := t.TempDir()
 	targetDir := t.TempDir()
 	testDir := filepath.Join(sourceDir, "testdir")
-	err := os.Mkdir(testDir, 0755)
+	err := os.Mkdir(testDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create test directory: %v", err)
 	}

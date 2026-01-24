@@ -29,14 +29,11 @@ type CompressOptions struct {
 //
 // Example: Compress("/data/movies", "/backups", nil)
 func Compress(source, target string, opts *CompressOptions) (string, error) {
-	if source == "" {
-		return "", fmt.Errorf("source path cannot be empty")
-	}
-	if target == "" {
-		return "", fmt.Errorf("target path cannot be empty")
+	// Validate inputs
+	if err := validateCompressInputs(source, target); err != nil {
+		return "", err
 	}
 
-	// Validate source exists
 	sourceInfo, err := os.Stat(source)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -45,25 +42,42 @@ func Compress(source, target string, opts *CompressOptions) (string, error) {
 		return "", fmt.Errorf("cannot access source: %w", err)
 	}
 
+	level := getCompressionLevel(opts)
+	outputPath := filepath.Join(target, filepath.Base(source)+"."+Extension)
+
+	// Create and write archive
+	return createArchive(source, sourceInfo, outputPath, level)
+}
+
+func validateCompressInputs(source, target string) error {
+	if source == "" {
+		return fmt.Errorf("source path cannot be empty")
+	}
+	if target == "" {
+		return fmt.Errorf("target path cannot be empty")
+	}
+
 	// Validate target is accessible directory
 	targetInfo, err := os.Stat(target)
 	if err != nil {
-		return "", fmt.Errorf("target not accessible: %w", err)
+		return fmt.Errorf("target not accessible: %w", err)
 	}
 	if !targetInfo.IsDir() {
-		return "", fmt.Errorf("target must be a directory: %s", target)
+		return fmt.Errorf("target must be a directory: %s", target)
 	}
 
-	// Set compression level
+	return nil
+}
+
+func getCompressionLevel(opts *CompressOptions) int {
 	level := 7
 	if opts != nil && opts.CompressionLevel > 0 && opts.CompressionLevel <= 9 {
 		level = opts.CompressionLevel
 	}
+	return level
+}
 
-	// Generate output filename
-	filename := filepath.Base(source)
-	outputPath := filepath.Join(target, filename+"."+Extension)
-
+func createArchive(source string, sourceInfo os.FileInfo, outputPath string, level int) (string, error) {
 	// Create archive file
 	tarfile, err := os.Create(outputPath)
 	if err != nil {
@@ -141,7 +155,8 @@ func Compress(source, target string, opts *CompressOptions) (string, error) {
 				return fmt.Errorf("failed to copy file %s: %w", path, err)
 			}
 			if copied != fileInfo.Size() {
-				return fmt.Errorf("incomplete copy of %s: got %d bytes, expected %d", path, copied, fileInfo.Size())
+				return fmt.Errorf("incomplete copy of %s: got %d bytes, expected %d",
+					path, copied, fileInfo.Size())
 			}
 
 			return nil

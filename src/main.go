@@ -36,7 +36,8 @@ func main() {
 	debug := flag.Bool(flagDebug, false, "Enable debug mode")
 	flag.Parse()
 
-	if err := validateFlags(*url, *login, *password, *radarrUrl, *radarrKey, !*skipCompress, *source, *target); err != nil {
+	if err := validateFlags(*url, *login, *password, *radarrUrl, *radarrKey,
+		!*skipCompress, *source, *target); err != nil {
 		log.Fatalf("Validation error: %v\n", err)
 	}
 
@@ -72,6 +73,15 @@ func syncWithRadarr(token string, debug bool) error {
 		return fmt.Errorf("fetch radarr movies failed: %w", err)
 	}
 
+	if err := syncServerToRadarr(moviesOnServer, moviesOnRadarr, debug); err != nil {
+		return err
+	}
+
+	return syncRadarrToServer(token, moviesOnServer, moviesOnRadarr, debug)
+}
+
+func syncServerToRadarr(moviesOnServer []model.MovieToRadarrResponse,
+	moviesOnRadarr []model.RadarrModel, debug bool) error {
 	fmt.Println("Syncing: Server to Radarr")
 	for _, movie := range moviesOnServer {
 		if debug {
@@ -88,7 +98,11 @@ func syncWithRadarr(token string, debug bool) error {
 			continue
 		}
 	}
+	return nil
+}
 
+func syncRadarrToServer(token string, moviesOnServer []model.MovieToRadarrResponse,
+	moviesOnRadarr []model.RadarrModel, debug bool) error {
 	fmt.Println("Syncing: Radarr to Server")
 	for _, movie := range moviesOnRadarr {
 		if debug {
@@ -100,19 +114,19 @@ func syncWithRadarr(token string, debug bool) error {
 			continue
 		}
 
-		if err := client.AddMovieToServer(token, movie); err != nil {
+		if err := client.AddMovieToServer(token, &movie); err != nil {
 			fmt.Printf("  Error adding %s to server: %v\n", movie.Title, err)
 			continue
 		}
 	}
-
 	return nil
 }
 
 // Helper functions
 
 // validateFlags validates required command line flags.
-func validateFlags(url, login, password, radarrUrl, radarrKey string, needSourceTarget bool, source, target string) error {
+func validateFlags(url, login, password, radarrUrl, radarrKey string,
+	needSourceTarget bool, source, target string) error {
 	if url == "" {
 		return fmt.Errorf("url is required")
 	}

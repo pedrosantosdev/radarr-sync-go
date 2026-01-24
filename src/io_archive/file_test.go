@@ -13,7 +13,7 @@ func TestFindWildcardInNestedDirectories(t *testing.T) {
 	subDir1 := filepath.Join(tmpDir, "level1")
 	subDir2 := filepath.Join(subDir1, "level2")
 
-	err := os.MkdirAll(subDir2, 0755)
+	err := os.MkdirAll(subDir2, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create nested directories: %v", err)
 	}

@@ -74,24 +74,14 @@ func SendRequest(method, endpoint string, result interface{}, data interface{}, 
 		return fmt.Errorf("endpoint cannot be empty")
 	}
 
-	var body []byte
-	if data != nil && (method == "POST" || method == "PUT") {
-		var err error
-		body, err = json.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("failed to encode request body: %w", err)
-		}
-	}
-
-	req, err := http.NewRequest(method, endpoint, bytes.NewBuffer(body))
+	body, err := encodeRequestBody(method, data)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-
-	for key, value := range headers {
-		req.Header.Add(key, value)
+	req, err := createRequest(method, endpoint, body, headers)
+	if err != nil {
+		return err
 	}
 
 	resp, err := httpClient.Do(req)
@@ -111,6 +101,31 @@ func SendRequest(method, endpoint string, result interface{}, data interface{}, 
 	}
 
 	return nil
+}
+
+func encodeRequestBody(method string, data interface{}) ([]byte, error) {
+	if data != nil && (method == "POST" || method == "PUT") {
+		body, err := json.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode request body: %w", err)
+		}
+		return body, nil
+	}
+	return []byte{}, nil
+}
+
+func createRequest(method, endpoint string, body []byte, headers map[string]string) (*http.Request, error) {
+	req, err := http.NewRequest(method, endpoint, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
+
+	return req, nil
 }
 
 // SendFormEncoded sends form-encoded POST request.

@@ -43,6 +43,7 @@ func TestHTTPClient(t *testing.T) {
 
 	if client == nil {
 		t.Error("Expected client to be non-nil")
+		return
 	}
 
 	if client.Timeout == 0 {
