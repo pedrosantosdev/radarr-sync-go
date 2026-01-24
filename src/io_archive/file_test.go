@@ -43,7 +43,7 @@ func TestFindWildcardInNestedDirectories(t *testing.T) {
 	}
 }
 
-func TestFileStatModificationTime(t *testing.T) {
+func TestGetFileInfoModificationTime(t *testing.T) {
 	tmpDir := t.TempDir()
 	filename := "testfile"
 
@@ -53,7 +53,11 @@ func TestFileStatModificationTime(t *testing.T) {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
-	info := FileStat(filename, "tar.gz", tmpDir)
+	info, err := GetFileInfo(tmpDir, filename, "tar.gz")
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 
 	if info == nil {
 		t.Error("Expected FileInfo, got nil")

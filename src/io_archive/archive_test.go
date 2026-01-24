@@ -110,6 +110,31 @@ func TestFileStatExistingFile(t *testing.T) {
 	}
 }
 
+func TestGetFileInfoExistingFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	filename := "testfile"
+
+	filePath := filepath.Join(tmpDir, filename+".tar.gz")
+	err := os.WriteFile(filePath, []byte("test"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	info, err := io_archive.GetFileInfo(tmpDir, filename, "tar.gz")
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if info == nil {
+		t.Error("Expected FileInfo, got nil")
+	}
+
+	if info.Name() != filename+".tar.gz" {
+		t.Errorf("Expected file name '%s.tar.gz', got '%s'", filename, info.Name())
+	}
+}
+
 func TestFileStatNonExistentFile(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -119,6 +144,19 @@ func TestFileStatNonExistentFile(t *testing.T) {
 		t.Error("Expected nil for non-existent file, got FileInfo")
 	}
 }
+
+func TestGetFileInfoNonExistentFile(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	info, err := io_archive.GetFileInfo(tmpDir, "nonexistent", "tar.gz")
+
+	if err != nil {
+		t.Fatalf("Expected no error for non-existent file, got %v", err)
+	}
+
+	if info != nil {
+		t.Error("Expected nil FileInfo for non-existent file")
+	}
 
 func TestFileStatWithoutExtension(t *testing.T) {
 	tmpDir := t.TempDir()
@@ -141,6 +179,30 @@ func TestFileStatWithoutExtension(t *testing.T) {
 	}
 }
 
+func TestGetFileInfoWithoutExtension(t *testing.T) {
+	tmpDir := t.TempDir()
+	filename := "testfile"
+
+	filePath := filepath.Join(tmpDir, filename)
+	err := os.WriteFile(filePath, []byte("test"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	info, err := io_archive.GetFileInfo(tmpDir, filename, "")
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if info == nil {
+		t.Error("Expected FileInfo, got nil")
+	}
+
+	if info.Name() != filename {
+		t.Errorf("Expected file name '%s', got '%s'", filename, info.Name())
+	}
+
 func TestFileStatEmptyExtension(t *testing.T) {
 	tmpDir := t.TempDir()
 	filename := "testfile"
@@ -158,6 +220,60 @@ func TestFileStatEmptyExtension(t *testing.T) {
 	}
 }
 
+func TestGetFileInfoEmptyExtension(t *testing.T) {
+	tmpDir := t.TempDir()
+	filename := "testfile"
+
+	filePath := filepath.Join(tmpDir, filename)
+	err := os.WriteFile(filePath, []byte("test"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	info, err := io_archive.GetFileInfo(tmpDir, filename, "")
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if info == nil {
+		t.Error("Expected FileInfo for file without extension")
+	}
+}
+
+func TestGetFileInfoValidationEmptyRoot(t *testing.T) {
+	_, err := io_archive.GetFileInfo("", "file", "txt")
+
+	if err == nil {
+		t.Error("Expected error for empty root")
+	}
+}
+
+func TestGetFileInfoValidationEmptyFilename(t *testing.T) {
+	_, err := io_archive.GetFileInfo("/tmp", "", "txt")
+
+	if err == nil {
+		t.Error("Expected error for empty filename")
+	}
+}
+
+func TestFindWildcardValidationEmptyRoot(t *testing.T) {
+	_, err := io_archive.FindWildcard("", "*.txt")
+
+	if err == nil {
+		t.Error("Expected error for empty root")
+	}
+}
+
+func TestFindWildcardValidationEmptyPattern(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	_, err := io_archive.FindWildcard(tmpDir, "")
+
+	if err == nil {
+		t.Error("Expected error for empty pattern")
+	}
+
 func TestGZIPFileNotFound(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -165,6 +281,36 @@ func TestGZIPFileNotFound(t *testing.T) {
 
 	if err == nil {
 		t.Error("Expected error for non-existent source, got nil")
+	}
+}
+
+func TestCompressValidateSourceEmpty(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	_, err := io_archive.Compress("", tmpDir, nil)
+
+	if err == nil {
+		t.Error("Expected error for empty source")
+	}
+}
+
+func TestCompressValidateTargetEmpty(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	_, err := io_archive.Compress(tmpDir, "", nil)
+
+	if err == nil {
+		t.Error("Expected error for empty target")
+	}
+}
+
+func TestCompressSourceNotFound(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	_, err := io_archive.Compress("/path/to/nonexistent/file", tmpDir, nil)
+
+	if err == nil {
+		t.Error("Expected error for non-existent source")
 	}
 }
 
@@ -185,6 +331,22 @@ func TestGZIPTargetDirectoryNotAccessible(t *testing.T) {
 	}
 }
 
+func TestCompressTargetNotDirectory(t *testing.T) {
+	sourceDir := t.TempDir()
+	targetFile := filepath.Join(t.TempDir(), "file.txt")
+
+	err := os.WriteFile(targetFile, []byte("target"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create target file: %v", err)
+	}
+
+	_, err = io_archive.Compress(sourceDir, targetFile, nil)
+
+	if err == nil {
+		t.Error("Expected error when target is not a directory")
+	}
+}
+
 func TestGZIPSimpleFile(t *testing.T) {
 	sourceDir := t.TempDir()
 	targetDir := t.TempDir()
@@ -195,13 +357,114 @@ func TestGZIPSimpleFile(t *testing.T) {
 		t.Fatalf("Failed to create source file: %v", err)
 	}
 
-	err = GZIP(sourceFile, targetDir)
+	
+
+func TestCompressSimpleFile(t *testing.T) {
+	sourceDir := t.TempDir()
+	targetDir := t.TempDir()
+
+	sourceFile := filepath.Join(sourceDir, "test.txt")
+	err := os.WriteFile(sourceFile, []byte("test content"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create source file: %v", err)
+	}
+
+	outputPath, err := io_archive.Compress(sourceFile, targetDir, nil)
 
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
 	// Verify the tar.gz file was created
+	info, err := os.Stat(outputPath)
+	if err != nil {
+		t.Fatalf("Expected compressed file to exist, got error: %v", err)
+	}
+
+	if info.Size() == 0 {
+		t.Error("Expected compressed file to have content")
+	}
+
+	expectedName := "test.txt." + Extension
+	if filepath.Base(outputPath) != expectedName {
+		t.Errorf("Expected output name '%s', got '%s'", expectedName, filepath.Base(outputPath))
+	}
+}err = GZIP(sourceFile, targetDir)
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	
+
+func TestCompressDirectory(t *testing.T) {
+	sourceDir := t.TempDir()
+	targetDir := t.TempDir()
+
+	// Create a source directory with files
+	testDir := filepath.Join(sourceDir, "testdir")
+	err := os.Mkdir(testDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create test directory: %v", err)
+	}
+
+	err = os.WriteFile(filepath.Join(testDir, "file1.txt"), []byte("content1"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create file1: %v", err)
+	}
+
+	err = os.WriteFile(filepath.Join(testDir, "file2.txt"), []byte("content2"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create file2: %v", err)
+	}
+
+	outputPath, err := io_archive.Compress(testDir, targetDir, nil)
+
+	if err != nil {
+		t.Fatalf("Expected no error for directory compression, got %v", err)
+	}
+
+	info, err := os.Stat(outputPath)
+	if err != nil {
+		t.Fatalf("Expected compressed file to exist, got error: %v", err)
+	}
+
+	if info.Size() == 0 {
+		t.Error("Expected compressed file to have content")
+	}
+
+	expectedName := "testdir." + Extension
+	if filepath.Base(outputPath) != expectedName {
+		t.Errorf("Expected output name '%s', got '%s'", expectedName, filepath.Base(outputPath))
+	}
+}
+
+func TestCompressWithCompressionLevel(t *testing.T) {
+	sourceDir := t.TempDir()
+	targetDir := t.TempDir()
+
+	sourceFile := filepath.Join(sourceDir, "test.txt")
+	err := os.WriteFile(sourceFile, []byte("test content test content"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create source file: %v", err)
+	}
+
+	opts := &io_archive.CompressOptions{CompressionLevel: 1}
+	outputPath, err := io_archive.Compress(sourceFile, targetDir, opts)
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	info, err := os.Stat(outputPath)
+	if err != nil {
+		t.Fatalf("Expected compressed file to exist, got error: %v", err)
+	}
+
+	if info.Size() == 0 {
+		t.Error("Expected compressed file to have content")
+	}
+}// Verify the tar.gz file was created
 	expectedFile := filepath.Join(targetDir, "test.txt."+Extension)
 	info, err := os.Stat(expectedFile)
 	if err != nil {

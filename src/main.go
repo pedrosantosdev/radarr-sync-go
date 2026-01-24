@@ -106,7 +106,7 @@ func compressNSyncRemote(token, source, target string) error {
 	for _, movie := range movies {
 		listMovies = append(listMovies, movie.Path)
 	}
-	e := compress.Handler(source, target, listMovies)
+	e := compress.SyncAndCompress(source, target, listMovies)
 	if e != nil {
 		return e
 	}
