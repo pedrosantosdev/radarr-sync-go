@@ -163,6 +163,10 @@ func SendFormEncoded(endpoint string, result interface{}, data map[string]string
 // Note: This operation has overhead due to marshaling/unmarshaling.
 // For performance-critical code, consider using reflection directly.
 func StructToMap(obj interface{}) (map[string]interface{}, error) {
+	if obj == nil {
+		return nil, errors.New("cannot convert nil to map")
+	}
+
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal struct: %w", err)

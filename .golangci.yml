@@ -1,0 +1,48 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - vet
+    - fmt
+    - goimports
+    - ineffassign
+    - unused
+    - misspell
+    - gosimple
+    - staticcheck
+    - errcheck
+    - bodyclose
+    - nilerr
+    - typecheck
+    - varcheck
+    - structcheck
+    - shadow
+    - unconvert
+    - unparam
+    - dupword
+    - durationcheck
+    - gocritic
+    - gocyclo
+    - lll
+    - nakedret
+
+linters-settings:
+  gocyclo:
+    min-complexity: 10
+  lll:
+    line-length: 120
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gocyclo
+        - lll
