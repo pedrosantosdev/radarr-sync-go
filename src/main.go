@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/pedrosantosdev/radarr-sync-go/src/client"
 	"github.com/pedrosantosdev/radarr-sync-go/src/compress"
@@ -151,7 +150,7 @@ func movieExistsOnRadarr(tmdbId int, movies model.GetMovieRadarrModel) bool {
 }
 
 // movieExistsOnServer checks if a movie with given tmdbId exists on server.
-func movieExistsOnServer(tmdbId int, movies model.MovieResponse) bool {
+func movieExistsOnServer(tmdbId int, movies []model.MovieToRadarrResponse) bool {
 	for _, movie := range movies {
 		if movie.TmdbId == tmdbId {
 			return true
