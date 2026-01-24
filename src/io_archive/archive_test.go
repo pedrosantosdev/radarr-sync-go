@@ -79,7 +79,7 @@ func TestGetFileInfoExistingFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	filename := "testfile"
 	filePath := filepath.Join(tmpDir, filename+".tar.gz")
-	err := os.WriteFile(filePath, []byte("test"), 0644)
+	err := os.WriteFile(filePath, []byte("test"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestGetFileInfoEmptyExtension(t *testing.T) {
 	tmpDir := t.TempDir()
 	filename := "testfile"
 	filePath := filepath.Join(tmpDir, filename)
-	err := os.WriteFile(filePath, []byte("test"), 0644)
+	err := os.WriteFile(filePath, []byte("test"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -208,7 +208,7 @@ func TestCompressSourceNotFound(t *testing.T) {
 func TestCompressTargetNotDirectory(t *testing.T) {
 	sourceDir := t.TempDir()
 	targetFile := filepath.Join(t.TempDir(), "file.txt")
-	err := os.WriteFile(targetFile, []byte("target"), 0644)
+	err := os.WriteFile(targetFile, []byte("target"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create target file: %v", err)
 	}
@@ -223,7 +223,7 @@ func TestCompressSimpleFile(t *testing.T) {
 	sourceDir := t.TempDir()
 	targetDir := t.TempDir()
 	sourceFile := filepath.Join(sourceDir, "test.txt")
-	err := os.WriteFile(sourceFile, []byte("test content"), 0644)
+	err := os.WriteFile(sourceFile, []byte("test content"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create source file: %v", err)
 	}
@@ -257,12 +257,12 @@ func TestCompressDirectory(t *testing.T) {
 		t.Fatalf("Failed to create test directory: %v", err)
 	}
 
-	err = os.WriteFile(filepath.Join(testDir, "file1.txt"), []byte("content1"), 0644)
+	err = os.WriteFile(filepath.Join(testDir, "file1.txt"), []byte("content1"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create file1: %v", err)
 	}
 
-	err = os.WriteFile(filepath.Join(testDir, "file2.txt"), []byte("content2"), 0644)
+	err = os.WriteFile(filepath.Join(testDir, "file2.txt"), []byte("content2"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create file2: %v", err)
 	}
@@ -291,7 +291,7 @@ func TestCompressWithCompressionLevel(t *testing.T) {
 	sourceDir := t.TempDir()
 	targetDir := t.TempDir()
 	sourceFile := filepath.Join(sourceDir, "test.txt")
-	err := os.WriteFile(sourceFile, []byte("test content test content"), 0644)
+	err := os.WriteFile(sourceFile, []byte("test content test content"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create source file: %v", err)
 	}

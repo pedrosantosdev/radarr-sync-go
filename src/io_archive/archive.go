@@ -104,63 +104,7 @@ func createArchive(source string, sourceInfo os.FileInfo, outputPath string, lev
 	}
 
 	// Walk source and add files to archive
-	walkErr := filepath.Walk(source,
-		func(path string, fileInfo os.FileInfo, err error) error {
-			if err != nil {
-				return fmt.Errorf("walk error at %s: %w", path, err)
-			}
-
-			// Skip symlinks
-			if fileInfo.Mode()&os.ModeSymlink != 0 {
-				return nil
-			}
-
-			// Create tar header
-			header, err := tar.FileInfoHeader(fileInfo, "")
-			if err != nil {
-				return fmt.Errorf("failed to create header for %s: %w", path, err)
-			}
-
-			// Set header name with correct path separators for tar format
-			if baseDir != "" {
-				relPath, err := filepath.Rel(source, path)
-				if err != nil {
-					return fmt.Errorf("failed to get relative path: %w", err)
-				}
-				// Always use forward slash in tar format
-				header.Name = filepath.ToSlash(filepath.Join(baseDir, relPath))
-			} else {
-				header.Name = filepath.ToSlash(filepath.Base(path))
-			}
-
-			// Write header
-			if err := writer.WriteHeader(header); err != nil {
-				return fmt.Errorf("failed to write header for %s: %w", path, err)
-			}
-
-			// Skip directory content
-			if fileInfo.IsDir() {
-				return nil
-			}
-
-			// Copy file content
-			file, err := os.Open(path)
-			if err != nil {
-				return fmt.Errorf("failed to open file %s: %w", path, err)
-			}
-			defer file.Close()
-
-			copied, err := io.Copy(writer, file)
-			if err != nil {
-				return fmt.Errorf("failed to copy file %s: %w", path, err)
-			}
-			if copied != fileInfo.Size() {
-				return fmt.Errorf("incomplete copy of %s: got %d bytes, expected %d",
-					path, copied, fileInfo.Size())
-			}
-
-			return nil
-		})
+	walkErr := filepath.Walk(source, archiveWalker(writer, source, baseDir))
 
 	// Handle walk errors
 	if walkErr != nil {
@@ -188,4 +132,68 @@ func createArchive(source string, sourceInfo os.FileInfo, outputPath string, lev
 
 	tarfile.Close()
 	return outputPath, nil
+}
+
+// archiveWalker creates a filepath.WalkFunc that adds files to a tar archive
+func archiveWalker(writer *tar.Writer, source, baseDir string) filepath.WalkFunc {
+	return func(path string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("walk error at %s: %w", path, err)
+		}
+
+		// Skip symlinks
+		if fileInfo.Mode()&os.ModeSymlink != 0 {
+			return nil
+		}
+
+		// Create tar header
+		header, err := tar.FileInfoHeader(fileInfo, "")
+		if err != nil {
+			return fmt.Errorf("failed to create header for %s: %w", path, err)
+		}
+
+		// Set header name with correct path separators for tar format
+		if baseDir != "" {
+			relPath, err := filepath.Rel(source, path)
+			if err != nil {
+				return fmt.Errorf("failed to get relative path: %w", err)
+			}
+			// Always use forward slash in tar format
+			header.Name = filepath.ToSlash(filepath.Join(baseDir, relPath))
+		} else {
+			header.Name = filepath.ToSlash(filepath.Base(path))
+		}
+
+		// Write header
+		if err := writer.WriteHeader(header); err != nil {
+			return fmt.Errorf("failed to write header for %s: %w", path, err)
+		}
+
+		// Skip directory content
+		if fileInfo.IsDir() {
+			return nil
+		}
+
+		return addFileToArchive(writer, path, fileInfo)
+	}
+}
+
+// addFileToArchive copies a file's content to the tar archive
+func addFileToArchive(writer *tar.Writer, path string, fileInfo os.FileInfo) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", path, err)
+	}
+	defer file.Close()
+
+	copied, err := io.Copy(writer, file)
+	if err != nil {
+		return fmt.Errorf("failed to copy file %s: %w", path, err)
+	}
+	if copied != fileInfo.Size() {
+		return fmt.Errorf("incomplete copy of %s: got %d bytes, expected %d",
+			path, copied, fileInfo.Size())
+	}
+
+	return nil
 }

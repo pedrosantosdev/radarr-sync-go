@@ -1,5 +1,5 @@
 output:
-  format: colored-line-number
+  formats: [colored-line-number]
 
 run:
   timeout: 5m
@@ -7,7 +7,7 @@ run:
 
 linters:
   enable:
-    - vet
+    - govet
     - goimports
     - ineffassign
     - unused

@@ -69,7 +69,7 @@ func decodeJSON(respBody io.ReadCloser, result interface{}) error {
 // - headers: optional custom headers
 //
 // Returns error if request fails or status code is not 2xx.
-func SendRequest(method, endpoint string, result interface{}, data interface{}, headers map[string]string) error {
+func SendRequest(method, endpoint string, result, data interface{}, headers map[string]string) error {
 	if endpoint == "" {
 		return fmt.Errorf("endpoint cannot be empty")
 	}
