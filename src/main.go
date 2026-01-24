@@ -1,3 +1,4 @@
+//nolint:goimports
 package main
 
 import (
@@ -12,15 +13,15 @@ import (
 
 // Flag names
 const (
-	flagURL         = "url"
-	flagLogin       = "login"
-	flagPassword    = "password"
-	flagSource      = "source"
-	flagTarget      = "target"
-	flagRadarrURL   = "radarr-url"
-	flagRadarrKey   = "radarr-key"
+	flagURL          = "url"
+	flagLogin        = "login"
+	flagPassword     = "password"
+	flagSource       = "source"
+	flagTarget       = "target"
+	flagRadarrURL    = "radarr-url"
+	flagRadarrKey    = "radarr-key"
 	flagSkipCompress = "skip-compress"
-	flagDebug       = "debug"
+	flagDebug        = "debug"
 )
 
 func main() {
