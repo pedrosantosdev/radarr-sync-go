@@ -68,34 +68,6 @@ func TestGetFileInfoModificationTime(t *testing.T) {
 	}
 }
 
-func TestGZIPPreservesFileContent(t *testing.T) {
-	sourceDir := t.TempDir()
-	targetDir := t.TempDir()
-
-	testContent := []byte("This is test content for verification")
-	sourceFile := filepath.Join(sourceDir, "content.txt")
-
-	err := os.WriteFile(sourceFile, testContent, 0644)
-	if err != nil {
-		t.Fatalf("Failed to create source file: %v", err)
-	}
-
-	err = GZIP(sourceFile, targetDir)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	compressedFile := filepath.Join(targetDir, "content.txt."+Extension)
-	stat, err := os.Stat(compressedFile)
-	if err != nil {
-		t.Fatalf("Expected compressed file to exist, got error: %v", err)
-	}
-
-	if stat.Size() == 0 {
-		t.Error("Compressed file is empty")
-	}
-}
-
 func TestExtensionConstant(t *testing.T) {
 	if Extension != "tar.gz" {
 		t.Errorf("Expected Extension constant 'tar.gz', got '%s'", Extension)

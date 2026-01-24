@@ -81,12 +81,3 @@ func GetFileInfo(root, filename, extension string) (fs.FileInfo, error) {
 	return info, nil
 }
 
-// FileStat is deprecated. Use GetFileInfo instead.
-// Kept for backwards compatibility.
-func FileStat(filename, fileExtension, root string) fs.FileInfo {
-	info, err := GetFileInfo(root, filename, fileExtension)
-	if err != nil {
-		return nil
-	}
-	return info
-}

@@ -28,19 +28,18 @@ func AddMovieOnRadarr(data model.MovieToRadarrResponse) error {
 
 	var cResp model.RadarrResponseError
 
-	c := HttpClient()
-	err := SendRequest(c, radarrURI, "POST", &cResp, &values, nil)
+	err := SendRequest("POST", radarrURI, &cResp, values, nil)
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
+
 func GetAllMoviesOnRadarr() (model.GetMovieRadarrModel, error) {
 	var cResp model.GetMovieRadarrModel
 
-	c := HttpClient()
-	err := SendRequest(c, radarrURI, "GET", &cResp, nil, nil)
+	err := SendRequest("GET", radarrURI, &cResp, nil, nil)
 	if err != nil {
 		return nil, err
 	}

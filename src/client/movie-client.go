@@ -21,8 +21,7 @@ func FetchMoviesListToCompress(token string) (model.MovieResponse, error) {
 
 	var cResp model.MovieResponse
 
-	c := HttpClient()
-	err := SendRequest(c, URL, "GET", &cResp, nil, &headers)
+	err := SendRequest("GET", URL, &cResp, nil, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +38,7 @@ func FetchMoviesListToSync(token string) ([]model.MovieToRadarrResponse, error) 
 
 	var cResp []model.MovieToRadarrResponse
 
-	c := HttpClient()
-	err := SendRequest(c, URL, "GET", &cResp, nil, &headers)
+	err := SendRequest("GET", URL, &cResp, nil, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +49,6 @@ func FetchMoviesListToSync(token string) ([]model.MovieToRadarrResponse, error) 
 func AddMovieToServer(token string, data model.RadarrModel) error {
 	URL := fmt.Sprintf("%s/movies", serverURI)
 
-	//Create a variable of the same type as our model
-	var cResp interface{}
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", token),
 	}
@@ -74,8 +70,8 @@ func AddMovieToServer(token string, data model.RadarrModel) error {
 		"needSync":  false,
 	}
 
-	c := HttpClient()
-	err := SendRequest(c, URL, "POST", &cResp, &body, &headers)
+	var cResp interface{}
+	err := SendRequest("POST", URL, &cResp, body, headers)
 	if err != nil {
 		return err
 	}
@@ -90,7 +86,7 @@ func Login(login, password string) (model.MovieLoginResponse, error) {
 		"username": login,
 		"password": password,
 	}
-	err := PostFormEncoded(URL, &cResp, data)
+	err := SendFormEncoded(URL, &cResp, data)
 	if err != nil {
 		return model.MovieLoginResponse{}, err
 	}

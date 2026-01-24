@@ -39,8 +39,8 @@ func TestStructToMapWithNilStruct(t *testing.T) {
 	}
 }
 
-func TestHttpClient(t *testing.T) {
-	client := HttpClient()
+func TestHTTPClient(t *testing.T) {
+	client := HTTPClient()
 
 	if client == nil {
 		t.Error("Expected client to be non-nil")
@@ -51,7 +51,16 @@ func TestHttpClient(t *testing.T) {
 	}
 }
 
-func TestHandleJsonValidJSON(t *testing.T) {
+func TestHTTPClientConnectionPool(t *testing.T) {
+	client1 := HTTPClient()
+	client2 := HTTPClient()
+
+	if client1 != client2 {
+		t.Error("Expected same client instance (connection pool reuse)")
+	}
+}
+
+func TestDecodeJSONValidJSON(t *testing.T) {
 	type Response struct {
 		Message string `json:"message"`
 	}
@@ -60,7 +69,7 @@ func TestHandleJsonValidJSON(t *testing.T) {
 	body := io.NopCloser(bytes.NewBufferString(jsonData))
 
 	var resp Response
-	err := handleJson(body, &resp)
+	err := decodeJSON(body, &resp)
 
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -71,31 +80,31 @@ func TestHandleJsonValidJSON(t *testing.T) {
 	}
 }
 
-func TestHandleJsonMalformedJSON(t *testing.T) {
+func TestDecodeJSONMalformedJSON(t *testing.T) {
 	jsonData := `{invalid json}`
 	body := io.NopCloser(bytes.NewBufferString(jsonData))
 
 	var resp interface{}
-	err := handleJson(body, &resp)
+	err := decodeJSON(body, &resp)
 
 	if err == nil {
 		t.Error("Expected error for malformed JSON, got nil")
 	}
 }
 
-func TestHandleJsonEmptyBody(t *testing.T) {
+func TestDecodeJSONEmptyBody(t *testing.T) {
 	jsonData := ``
 	body := io.NopCloser(bytes.NewBufferString(jsonData))
 
 	var resp interface{}
-	err := handleJson(body, &resp)
+	err := decodeJSON(body, &resp)
 
 	if err == nil {
 		t.Error("Expected error for empty body, got nil")
 	}
 }
 
-func TestHandleJsonInvalidType(t *testing.T) {
+func TestDecodeJSONInvalidType(t *testing.T) {
 	type Response struct {
 		Count int `json:"count"`
 	}
@@ -104,27 +113,21 @@ func TestHandleJsonInvalidType(t *testing.T) {
 	body := io.NopCloser(bytes.NewBufferString(jsonData))
 
 	var resp Response
-	err := handleJson(body, &resp)
+	err := decodeJSON(body, &resp)
 
 	if err == nil {
 		t.Error("Expected error for invalid type, got nil")
 	}
 }
 
-func TestPostFormEncodedWithValidURL(t *testing.T) {
-	// This test would require mocking HTTP responses
-	// Skipping for now as it requires integration test setup
+// Integration tests - require HTTP mock server
+
+func TestSendRequestIntegration(t *testing.T) {
+	// These are integration tests and require mocking
 	t.Skip("Integration test - requires HTTP mock server")
 }
 
-func TestSendRequestPostWithData(t *testing.T) {
-	// This test would require mocking HTTP responses
-	// Skipping for now as it requires integration test setup
-	t.Skip("Integration test - requires HTTP mock server")
-}
-
-func TestSendRequestGet(t *testing.T) {
-	// This test would require mocking HTTP responses
-	// Skipping for now as it requires integration test setup
+func TestSendFormEncodedIntegration(t *testing.T) {
+	// These are integration tests and require mocking
 	t.Skip("Integration test - requires HTTP mock server")
 }

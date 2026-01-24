@@ -23,8 +23,8 @@ Este projeto possui testes unitários abrangentes em cada package principal:
 #### 2. **client/** - Cliente HTTP
 - `client_test.go` - Funções utilitárias
   - `StructToMap()` - conversão de struct para map
-  - `HttpClient()` - instanciação do cliente HTTP
-  - `handleJson()` - parsing de JSON com tratamento de erros
+  - `HTTPClient()` - cliente HTTP com pool de conexões
+  - `decodeJSON()` - parsing de JSON com tratamento de erros
   - Tratamento de JSON malformado
   - Tratamento de tipos inválidos
 
@@ -46,8 +46,8 @@ Este projeto possui testes unitários abrangentes em cada package principal:
 #### 4. **io_archive/** - Operações com Arquivos
 - `archive_test.go` - Funções de arquivo
   - `FindWildcard()` - busca por padrões de arquivo
-  - `FileStat()` - obtenção de informações de arquivo
-  - `GZIP()` - compressão de arquivos/diretórios
+  - `GetFileInfo()` - obtenção de informações de arquivo
+  - `Compress()` - compressão de arquivos/diretórios
   - Testes com diretórios aninhados
   - Testes com múltiplos arquivos
   - Validação de tempo de modificação

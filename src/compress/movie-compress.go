@@ -137,9 +137,3 @@ func compressFiles(source, target string, moviePaths []string) error {
 
 	return nil
 }
-
-// Handler is deprecated. Use SyncAndCompress instead.
-// Kept for backwards compatibility.
-func Handler(source, target string, list []string) error {
-	return SyncAndCompress(source, target, list)
-}

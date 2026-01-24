@@ -12,110 +12,166 @@ import (
 	"time"
 )
 
-func StructToMap(obj interface{}) (newMap map[string]interface{}, err error) {
-	data, err := json.Marshal(obj) // Convert to a json string
-
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(data, &newMap) // Convert to a map
-	return
+// httpClient is reused with connection pooling for better performance
+var httpClient = &http.Client{
+	Timeout: 30 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+		IdleConnTimeout:     90 * time.Second,
+	},
 }
 
-func HttpClient() *http.Client {
-	c := &http.Client{Timeout: 10 * time.Second}
-	return c
+// HTTPClient returns the global reusable HTTP client with timeout.
+// Use this client for all requests to reuse connections.
+func HTTPClient() *http.Client {
+	return httpClient
 }
 
-func handleJson(respBody io.ReadCloser, cResp interface{}) error {
-	if err := json.NewDecoder(respBody).Decode(&cResp); err != nil {
+// decodeJSON decodes response JSON with robust error handling.
+func decodeJSON(respBody io.ReadCloser, result interface{}) error {
+	if err := json.NewDecoder(respBody).Decode(&result); err != nil {
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
 
 		switch {
 		case errors.As(err, &syntaxError):
-			msg := fmt.Sprintf("request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
 
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			msg := "request body contains badly-formed JSON"
-			return fmt.Errorf(msg)
+			return fmt.Errorf("request body contains badly-formed JSON")
 
 		case errors.As(err, &unmarshalTypeError):
-			msg := fmt.Sprintf("request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("request body contains an invalid value for the %q field (at position %d)",
+				unmarshalTypeError.Field, unmarshalTypeError.Offset)
 
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-			msg := fmt.Sprintf("request body contains unknown field %s", fieldName)
-			return fmt.Errorf(msg)
+			return fmt.Errorf("request body contains unknown field %s", fieldName)
 
 		case errors.Is(err, io.EOF):
-			msg := "request body must not be empty"
-			return fmt.Errorf(msg)
+			return fmt.Errorf("request body must not be empty")
 
+		default:
+			return fmt.Errorf("failed to decode JSON: %w", err)
 		}
 	}
 	return nil
 }
 
-func SendRequest(c *http.Client, url, method string, cResp interface{}, data *map[string]interface{}, headerMap *map[string]string) error {
-	endpoint := url
+// SendRequest sends HTTP request with automatic JSON encoding/decoding.
+//
+// Parameters:
+// - method: HTTP method (GET, POST, PUT, DELETE)
+// - endpoint: full URL to request
+// - result: pointer to struct to decode response
+// - data: optional request body (only for POST/PUT)
+// - headers: optional custom headers
+//
+// Returns error if request fails or status code is not 2xx.
+func SendRequest(method, endpoint string, result interface{}, data interface{}, headers map[string]string) error {
+	if endpoint == "" {
+		return fmt.Errorf("endpoint cannot be empty")
+	}
 
 	var body []byte
-	if method == "POST" && data != nil {
-		jsonData, err := json.Marshal(data)
+	if data != nil && (method == "POST" || method == "PUT") {
+		var err error
+		body, err = json.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to encode request body: %w", err)
 		}
-		body = jsonData
-
 	}
 
 	req, err := http.NewRequest(method, endpoint, bytes.NewBuffer(body))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	if headerMap != nil {
-		for headerKey, headerValue := range *headerMap {
-			req.Header.Add(headerKey, headerValue)
-		}
+	for key, value := range headers {
+		req.Header.Add(key, value)
 	}
 
-	resp, err := c.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("request failed: %w", err)
 	}
-
-	// Close the connection to reuse it
 	defer resp.Body.Close()
 
-	//Decode the data
-	if err := handleJson(resp.Body, &cResp); err != nil && (resp.StatusCode < 200 && resp.StatusCode > 299) {
-		msg := fmt.Sprintf("%s | %d", err, resp.StatusCode)
-		return fmt.Errorf(msg)
+	// Check HTTP status code
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+
+	// Decode response
+	if err := decodeJSON(resp.Body, result); err != nil {
+		return fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	return nil
 }
 
-func PostFormEncoded(URL string, cResp interface{}, data map[string]string) error {
+// SendFormEncoded sends form-encoded POST request.
+//
+// Parameters:
+// - endpoint: full URL to request
+// - result: pointer to struct to decode response
+// - data: form data
+//
+// Returns error if request fails or status code is not 2xx.
+func SendFormEncoded(endpoint string, result interface{}, data map[string]string) error {
+	if endpoint == "" {
+		return fmt.Errorf("endpoint cannot be empty")
+	}
+
 	body := url.Values{}
 	for key, value := range data {
 		body.Add(key, value)
 	}
-	resp, err := http.PostForm(URL, body)
+
+	req, err := http.NewRequest("POST", endpoint, strings.NewReader(body.Encode()))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	if err := handleJson(resp.Body, &cResp); err != nil || (resp.StatusCode < 200 && resp.StatusCode > 299) {
-		return err
+
+	// Check HTTP status code
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+
+	// Decode response
+	if err := decodeJSON(resp.Body, result); err != nil {
+		return fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	return nil
+}
+
+// StructToMap converts struct to map using JSON marshaling.
+// This is useful for dynamic field access.
+//
+// Note: This operation has overhead due to marshaling/unmarshaling.
+// For performance-critical code, consider using reflection directly.
+func StructToMap(obj interface{}) (map[string]interface{}, error) {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal struct: %w", err)
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal to map: %w", err)
+	}
+
+	return result, nil
 }

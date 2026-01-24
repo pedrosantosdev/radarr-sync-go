@@ -174,10 +174,3 @@ func Compress(source, target string, opts *CompressOptions) (string, error) {
 	tarfile.Close()
 	return outputPath, nil
 }
-
-// GZIP is deprecated. Use Compress() instead.
-// Kept for backwards compatibility.
-func GZIP(source, target string) error {
-	_, err := Compress(source, target, nil)
-	return err
-}
