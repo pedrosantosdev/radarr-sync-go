@@ -7,65 +7,193 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 const Extension = "tar.gz"
 
-func GZIP(source, target string) error {
-	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.%s", filename, Extension))
-	tarfile, err := os.Create(target)
+// CompressOptions configures compression options
+type CompressOptions struct {
+	// CompressionLevel sets gzip compression level (1-9, default 7)
+	CompressionLevel int
+}
+
+// Compress creates a tar.gz archive from source to target directory.
+// If source is a directory, it compresses recursively preserving structure.
+// If source is a file, it compresses just that file.
+// Returns the path to created archive file.
+//
+// Returns error if:
+// - source path is empty or does not exist
+// - target path is empty or not a directory
+// - compression fails
+//
+// Example: Compress("/data/movies", "/backups", nil)
+func Compress(source, target string, opts *CompressOptions) (string, error) {
+	// Validate inputs
+	if err := validateCompressInputs(source, target); err != nil {
+		return "", err
+	}
+
+	sourceInfo, err := os.Stat(source)
 	if err != nil {
-		return err
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("source does not exist: %s", source)
+		}
+		return "", fmt.Errorf("cannot access source: %w", err)
+	}
+
+	level := getCompressionLevel(opts)
+	outputPath := filepath.Join(target, filepath.Base(source)+"."+Extension)
+
+	// Create and write archive
+	return createArchive(source, sourceInfo, outputPath, level)
+}
+
+func validateCompressInputs(source, target string) error {
+	if source == "" {
+		return fmt.Errorf("source path cannot be empty")
+	}
+	if target == "" {
+		return fmt.Errorf("target path cannot be empty")
+	}
+
+	// Validate target is accessible directory
+	targetInfo, err := os.Stat(target)
+	if err != nil {
+		return fmt.Errorf("target not accessible: %w", err)
+	}
+	if !targetInfo.IsDir() {
+		return fmt.Errorf("target must be a directory: %s", target)
+	}
+
+	return nil
+}
+
+func getCompressionLevel(opts *CompressOptions) int {
+	level := 7
+	if opts != nil && opts.CompressionLevel > 0 && opts.CompressionLevel <= 9 {
+		level = opts.CompressionLevel
+	}
+	return level
+}
+
+func createArchive(source string, sourceInfo os.FileInfo, outputPath string, level int) (string, error) {
+	// Create archive file
+	tarfile, err := os.Create(outputPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create archive: %w", err)
 	}
 	defer tarfile.Close()
-	gz, err := gzip.NewWriterLevel(tarfile, 7)
+
+	// Create gzip writer
+	gz, err := gzip.NewWriterLevel(tarfile, level)
 	if err != nil {
-		return err
+		tarfile.Close()
+		os.Remove(outputPath)
+		return "", fmt.Errorf("failed to create gzip writer: %w", err)
 	}
 	defer gz.Close()
-	tarball := tar.NewWriter(gz)
-	defer tarball.Close()
 
-	info, err := os.Stat(source)
-	if err != nil {
-		return err
-	}
+	// Create tar writer
+	writer := tar.NewWriter(gz)
+	defer writer.Close()
 
 	var baseDir string
-	if info.IsDir() {
+	if sourceInfo.IsDir() {
 		baseDir = filepath.Base(source)
 	}
 
-	return filepath.Walk(source,
-		func(path string, info os.FileInfo, err error) error {
+	// Walk source and add files to archive
+	walkErr := filepath.Walk(source, archiveWalker(writer, source, baseDir))
+
+	// Handle walk errors
+	if walkErr != nil {
+		writer.Close()
+		gz.Close()
+		tarfile.Close()
+		os.Remove(outputPath)
+		return "", fmt.Errorf("compression failed: %w", walkErr)
+	}
+
+	// Close writers in correct order
+	closeErr := writer.Close()
+	gzipErr := gz.Close()
+
+	if closeErr != nil {
+		tarfile.Close()
+		os.Remove(outputPath)
+		return "", fmt.Errorf("failed to close tar writer: %w", closeErr)
+	}
+	if gzipErr != nil {
+		tarfile.Close()
+		os.Remove(outputPath)
+		return "", fmt.Errorf("failed to close gzip writer: %w", gzipErr)
+	}
+
+	tarfile.Close()
+	return outputPath, nil
+}
+
+// archiveWalker creates a filepath.WalkFunc that adds files to a tar archive
+func archiveWalker(writer *tar.Writer, source, baseDir string) filepath.WalkFunc {
+	return func(path string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("walk error at %s: %w", path, err)
+		}
+
+		// Skip symlinks
+		if fileInfo.Mode()&os.ModeSymlink != 0 {
+			return nil
+		}
+
+		// Create tar header
+		header, err := tar.FileInfoHeader(fileInfo, "")
+		if err != nil {
+			return fmt.Errorf("failed to create header for %s: %w", path, err)
+		}
+
+		// Set header name with correct path separators for tar format
+		if baseDir != "" {
+			relPath, err := filepath.Rel(source, path)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to get relative path: %w", err)
 			}
-			header, err := tar.FileInfoHeader(info, info.Name())
-			if err != nil {
-				return err
-			}
+			// Always use forward slash in tar format
+			header.Name = filepath.ToSlash(filepath.Join(baseDir, relPath))
+		} else {
+			header.Name = filepath.ToSlash(filepath.Base(path))
+		}
 
-			if baseDir != "" {
-				header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
-			}
+		// Write header
+		if err := writer.WriteHeader(header); err != nil {
+			return fmt.Errorf("failed to write header for %s: %w", path, err)
+		}
 
-			if err := tarball.WriteHeader(header); err != nil {
-				return err
-			}
+		// Skip directory content
+		if fileInfo.IsDir() {
+			return nil
+		}
 
-			if info.IsDir() {
-				return nil
-			}
+		return addFileToArchive(writer, path, fileInfo)
+	}
+}
 
-			file, err := os.Open(path)
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-			_, err = io.Copy(tarball, file)
-			return err
-		})
+// addFileToArchive copies a file's content to the tar archive
+func addFileToArchive(writer *tar.Writer, path string, fileInfo os.FileInfo) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", path, err)
+	}
+	defer file.Close()
+
+	copied, err := io.Copy(writer, file)
+	if err != nil {
+		return fmt.Errorf("failed to copy file %s: %w", path, err)
+	}
+	if copied != fileInfo.Size() {
+		return fmt.Errorf("incomplete copy of %s: got %d bytes, expected %d",
+			path, copied, fileInfo.Size())
+	}
+
+	return nil
 }
