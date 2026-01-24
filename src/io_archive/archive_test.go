@@ -60,7 +60,7 @@ func TestFindWildcardIgnoresDirectories(t *testing.T) {
 		t.Fatalf("Failed to create subdirectory: %v", err)
 	}
 
-	err = os.WriteFile(filepath.Join(tmpDir, "file.tar.gz"), []byte("test"), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, "file.tar.gz"), []byte("test"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestGetFileInfoWithoutExtension(t *testing.T) {
 	tmpDir := t.TempDir()
 	filename := "testfile"
 	filePath := filepath.Join(tmpDir, filename)
-	err := os.WriteFile(filePath, []byte("test"), 0644)
+	err := os.WriteFile(filePath, []byte("test"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}

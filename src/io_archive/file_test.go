@@ -27,7 +27,7 @@ func TestFindWildcardInNestedDirectories(t *testing.T) {
 	}
 
 	for path, content := range files {
-		err := os.WriteFile(path, []byte(content), 0644)
+		err := os.WriteFile(path, []byte(content), 0o644)
 		if err != nil {
 			t.Fatalf("Failed to create file %s: %v", path, err)
 		}
@@ -48,7 +48,7 @@ func TestGetFileInfoModificationTime(t *testing.T) {
 	filename := "testfile"
 
 	filePath := filepath.Join(tmpDir, filename+".tar.gz")
-	err := os.WriteFile(filePath, []byte("test"), 0644)
+	err := os.WriteFile(filePath, []byte("test"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
