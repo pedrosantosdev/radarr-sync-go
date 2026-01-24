@@ -1,4 +1,3 @@
-//nolint:goimports
 package client
 
 import (

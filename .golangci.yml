@@ -8,7 +8,6 @@ run:
 linters:
   enable:
     - govet
-    - goimports
     - ineffassign
     - unused
     - misspell
@@ -28,8 +27,6 @@ linters:
     - nakedret
 
 linters-settings:
-  goimports:
-    local-prefixes: github.com/pedrosantosdev/radarr-sync-go
   gocyclo:
     min-complexity: 10
   lll:
