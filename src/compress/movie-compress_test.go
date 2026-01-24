@@ -64,4 +64,3 @@ func TestSyncAndCompressTargetNotFound(t *testing.T) {
 		t.Error("Expected error for non-existent target")
 	}
 }
-}

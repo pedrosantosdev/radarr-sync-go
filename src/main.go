@@ -177,6 +177,3 @@ func compressNSyncRemote(token, source, target string) error {
 
 	return nil
 }
-
-	return nil
-}

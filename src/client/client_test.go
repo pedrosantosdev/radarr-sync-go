@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"testing"
 )
