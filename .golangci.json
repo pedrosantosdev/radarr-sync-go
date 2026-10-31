@@ -1,0 +1,70 @@
+{
+  "formatters": {
+    "exclusions": {
+      "generated": "lax",
+      "paths": [
+        "third_party$",
+        "builtin$",
+        "examples$"
+      ]
+    }
+  },
+  "linters": {
+    "enable": [
+      "bodyclose",
+      "dupword",
+      "durationcheck",
+      "gocritic",
+      "gocyclo",
+      "lll",
+      "misspell",
+      "nakedret",
+      "nilerr",
+      "unconvert",
+      "unparam"
+    ],
+    "exclusions": {
+      "generated": "lax",
+      "paths": [
+        "third_party$",
+        "builtin$",
+        "examples$"
+      ],
+      "presets": [
+        "comments",
+        "common-false-positives",
+        "legacy",
+        "std-error-handling"
+      ],
+      "rules": [
+        {
+          "linters": [
+            "errcheck",
+            "gocyclo",
+            "lll"
+          ],
+          "path": "_test\\.go"
+        }
+      ]
+    },
+    "settings": {
+      "gocritic": {
+        "enabled-tags": [
+          "diagnostic",
+          "style",
+          "performance"
+        ]
+      },
+      "gocyclo": {
+        "min-complexity": 10
+      },
+      "lll": {
+        "line-length": 120
+      }
+    }
+  },
+  "run": {
+    "tests": true
+  },
+  "version": "2"
+}
