@@ -130,7 +130,19 @@ func createArchive(source string, sourceInfo os.FileInfo, outputPath string, lev
 		return "", fmt.Errorf("failed to close gzip writer: %w", gzipErr)
 	}
 
-	tarfile.Close()
+	if err := tarfile.Close(); err != nil {
+		os.Remove(outputPath)
+		return "", fmt.Errorf("failed to close archive: %w", err)
+	}
+
+	// Keep the archive timestamp aligned with the source so clock skew (common
+	// on network shares) does not make the source look newer on every run.
+	modTime := sourceInfo.ModTime()
+	if err := os.Chtimes(outputPath, modTime, modTime); err != nil {
+		os.Remove(outputPath)
+		return "", fmt.Errorf("failed to set archive modification time: %w", err)
+	}
+
 	return outputPath, nil
 }
 

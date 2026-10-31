@@ -20,10 +20,10 @@ func TestFindWildcardInNestedDirectories(t *testing.T) {
 
 	// Create files at different levels
 	files := map[string]string{
-		filepath.Join(tmpDir, "file1.tar.gz"):      "test",
-		filepath.Join(subDir1, "file2.tar.gz"):     "test",
-		filepath.Join(subDir2, "file3.tar.gz"):     "test",
-		filepath.Join(subDir2, "other.txt"):        "test",
+		filepath.Join(tmpDir, "file1.tar.gz"):  "test",
+		filepath.Join(subDir1, "file2.tar.gz"): "test",
+		filepath.Join(subDir2, "file3.tar.gz"): "test",
+		filepath.Join(subDir2, "other.txt"):    "test",
 	}
 
 	for path, content := range files {
