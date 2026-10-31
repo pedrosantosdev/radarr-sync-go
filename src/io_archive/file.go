@@ -80,4 +80,3 @@ func GetFileInfo(root, filename, extension string) (fs.FileInfo, error) {
 
 	return info, nil
 }
-

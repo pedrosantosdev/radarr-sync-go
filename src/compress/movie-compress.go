@@ -152,6 +152,7 @@ func sourceSize(path string, info os.FileInfo) int64 {
 	}
 
 	var total int64
+	//nolint:nilerr // ignored nil not relevant for this scenario
 	_ = filepath.WalkDir(path, func(_ string, entry fs.DirEntry, err error) error {
 		if err != nil || !entry.Type().IsRegular() {
 			return nil
